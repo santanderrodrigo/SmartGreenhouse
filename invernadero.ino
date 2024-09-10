@@ -1,5 +1,6 @@
 #include "DHTSensor.h"
 #include "LCDDisplay.h"
+#include "ActuatorController.h"
 
 // Constants
 #define DHTPIN 2          // Pin where the DHT11 is connected
@@ -17,6 +18,7 @@
 
 Sensor* sensor; // DHT11 sensor
 Display* display; // LCD display
+ActuatorController* actuatorController; // Actuator controller
 unsigned long previousTempMillis = 0; // Previous time for temperature check
 unsigned long previousHumMillis = 0; // Previous time for humidity check
 
@@ -29,10 +31,8 @@ void setup() {
   display = new LCDDisplay(7, 8, 9, 10, 11, 12); // Example pin configuration
   display->begin();
   
-  pinMode(FAN_PIN, OUTPUT);
-  pinMode(PUMP_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
+  actuatorController = new ActuatorController(FAN_PIN, PUMP_PIN, GREEN_LED_PIN, RED_LED_PIN);
+  actuatorController->begin();
 }
 
 void loop() {
@@ -64,9 +64,9 @@ void checkTemperature() {
   display->showTemperature(temperature);
 
   if (temperature >= TEMP_THRESHOLD) {
-    digitalWrite(FAN_PIN, HIGH);
+    actuatorController->turnFanOn();
   } else {
-    digitalWrite(FAN_PIN, LOW);
+    actuatorController->turnFanOff();
   }
 }
 
@@ -85,12 +85,8 @@ void checkHumidity() {
   display->showHumidity(humidity);
 
   if (humidity <= HUM_THRESHOLD) {
-    digitalWrite(PUMP_PIN, HIGH);
-    digitalWrite(GREEN_LED_PIN, HIGH);
-    digitalWrite(RED_LED_PIN, LOW);
+    actuatorController->turnPumpOn();
   } else {
-    digitalWrite(PUMP_PIN, LOW);
-    digitalWrite(GREEN_LED_PIN, LOW);
-    digitalWrite(RED_LED_PIN, HIGH);
+    actuatorController->turnPumpOff();
   }
 }
