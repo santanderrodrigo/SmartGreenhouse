@@ -9,16 +9,10 @@ class DHTSensor : public Sensor {
 private:
   DHT dht; // Creamos un objeto de la clase DHT
 public:
-  DHTSensor(uint8_t pin, uint8_t type) : dht(pin, type) {}
-  void begin() override {
-    dht.begin(); // Inicializamos el sensor DHT
-  }
-  float readTemperature() override {
-    return dht.readTemperature(); // Leemos la temperatura
-  }
-  float readHumidity() override {
-    return dht.readHumidity(); // Leemos la humedad
-  }
+  DHTSensor(uint8_t pin, uint8_t type);
+  void begin() override;
+  float readTemperature() override;
+  float readHumidity() override;
 };
 
 #endif

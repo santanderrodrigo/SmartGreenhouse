@@ -1,6 +1,8 @@
 #ifndef ACTUATORCONTROLLER_H
 #define ACTUATORCONTROLLER_H
 
+#include <Arduino.h> // Incluimos la librería de Arduino para usar pinMode y digitalWrite
+
 class ActuatorController {
 private:
   uint8_t fanPin;
@@ -9,35 +11,12 @@ private:
   uint8_t redLedPin;
 
 public:
-  ActuatorController(uint8_t fan, uint8_t pump, uint8_t greenLed, uint8_t redLed)
-    : fanPin(fan), pumpPin(pump), greenLedPin(greenLed), redLedPin(redLed) {}
-
-  void begin() {
-    pinMode(fanPin, OUTPUT);
-    pinMode(pumpPin, OUTPUT);
-    pinMode(greenLedPin, OUTPUT);
-    pinMode(redLedPin, OUTPUT);
-  }
-
-  void turnFanOn() {
-    digitalWrite(fanPin, HIGH);
-  }
-
-  void turnFanOff() {
-    digitalWrite(fanPin, LOW);
-  }
-
-  void turnPumpOn() {
-    digitalWrite(pumpPin, HIGH);
-    digitalWrite(greenLedPin, HIGH);
-    digitalWrite(redLedPin, LOW);
-  }
-
-  void turnPumpOff() {
-    digitalWrite(pumpPin, LOW);
-    digitalWrite(greenLedPin, LOW);
-    digitalWrite(redLedPin, HIGH);
-  }
+  ActuatorController(uint8_t fan, uint8_t pump, uint8_t greenLed, uint8_t redLed);
+  void begin();
+  void turnFanOn();
+  void turnFanOff();
+  void turnPumpOn();
+  void turnPumpOff();
 };
 
 #endif
