@@ -12,7 +12,7 @@ public:
     : lcd(rs, enable, d4, d5, d6, d7) {}
   
   void begin() override {
-    lcd.begin(16, 2);
+    lcd.begin(16, 2); //iniciialized the lcd with 16 columns and 2 rows
   }
   
   void showTemperature(float temperature) override {

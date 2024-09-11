@@ -3,15 +3,18 @@
 #include "ActuatorController.h"
 
 // Constants
-#define DHTPIN 2          // Pin where the DHT11 is connected
+#define DHTPIN 13          // Pin where the DHT11 is connected
 #define DHTTYPE DHT11     // DHT 11
-#define FAN_PIN 3         // Pin for the fan motor
-#define PUMP_PIN 4        // Pin for the water pump
-#define GREEN_LED_PIN 5   // Pin for the green LED
-#define RED_LED_PIN 6     // Pin for the red LED
+#define FAN_PIN 6         // Pin for the fan motor
+#define PUMP_PIN 7        // Pin for the water pump
+#define GREEN_LED_PIN 11   // Pin for the green LED
+#define RED_LED_PIN 12     // Pin for the red LED
 
 #define TEMP_THRESHOLD 25 // Temperature threshold in °C
 #define HUM_THRESHOLD 40  // Humidity threshold in %
+
+#define TEMP_HYSTERESIS 0 // Temperature hysteresis in °C
+#define HUM_HYSTERESIS 0  // Humidity hysteresis in %
 
 #define TEMP_INTERVAL 2000 // Interval for temperature check in milliseconds
 #define HUM_INTERVAL 2000  // Interval for humidity check in milliseconds
@@ -22,19 +25,25 @@ ActuatorController* actuatorController; // Actuator controller
 unsigned long previousTempMillis = 0; // Previous time for temperature check
 unsigned long previousHumMillis = 0; // Previous time for humidity check
 
+bool fanOn = false; // State of the fan
+bool pumpOn = false; // State of the pump
+
+// Setup function
 void setup() {
   Serial.begin(9600);
   
-  sensor = new DHTSensor(DHTPIN, DHTTYPE);
-  sensor->begin();
+  sensor = new DHTSensor(DHTPIN, DHTTYPE); 
+  sensor->begin(); // Initialize the sensor
   
-  display = new LCDDisplay(7, 8, 9, 10, 11, 12); // Example pin configuration
-  display->begin();
+  // RW Pin is not used, so it is connected to GND, because the display stays in write mode
+  display = new LCDDisplay(10, 8, 5, 4, 3, 2); // Display pin configuration
+  display->begin(); // Initialize the display
   
   actuatorController = new ActuatorController(FAN_PIN, PUMP_PIN, GREEN_LED_PIN, RED_LED_PIN);
-  actuatorController->begin();
+  actuatorController->begin(); // Initialize the actuator controller
 }
 
+// Main loop
 void loop() {
   unsigned long currentMillis = millis();
 
@@ -63,10 +72,16 @@ void checkTemperature() {
 
   display->showTemperature(temperature);
 
-  if (temperature >= TEMP_THRESHOLD) {
-    actuatorController->turnFanOn();
+  if (fanOn) {
+    if (temperature <= TEMP_THRESHOLD - TEMP_HYSTERESIS) {
+      actuatorController->turnFanOff();
+      fanOn = false;
+    }
   } else {
-    actuatorController->turnFanOff();
+    if (temperature >= TEMP_THRESHOLD) {
+      actuatorController->turnFanOn();
+      fanOn = true;
+    }
   }
 }
 
@@ -84,9 +99,15 @@ void checkHumidity() {
 
   display->showHumidity(humidity);
 
-  if (humidity <= HUM_THRESHOLD) {
-    actuatorController->turnPumpOn();
+  if (pumpOn) {
+    if (humidity >= HUM_THRESHOLD + HUM_HYSTERESIS) {
+      actuatorController->turnPumpOff();
+      pumpOn = false;
+    }
   } else {
-    actuatorController->turnPumpOff();
+    if (humidity <= HUM_THRESHOLD) {
+      actuatorController->turnPumpOn();
+      pumpOn = true;
+    }
   }
 }
