@@ -1,8 +1,8 @@
 #ifndef LCDDISPLAY_H
 #define LCDDISPLAY_H
 
-#include <LiquidCrystal.h>
-#include "Display.h"
+#include <LiquidCrystal.h> // Incluimos la librería de la pantalla LCD
+#include "Display.h" // Incluimos la clase base Display
 
 class LCDDisplay : public Display {
 private:
@@ -16,15 +16,15 @@ public:
   }
   
   void showTemperature(float temperature) override {
-    lcd.setCursor(0, 0);
-    lcd.print("Temp: ");
+    lcd.setCursor(0, 0); // Nos movemos al inicio de la primera fila
+    lcd.print("Temp: "); // Mostramos el texto "Temp: "
     lcd.print(temperature);
     lcd.print(" C");
   }
   
   void showHumidity(float humidity) override {
-    lcd.setCursor(0, 1);
-    lcd.print("Humedad: ");
+    lcd.setCursor(0, 1); // Nos movemos al inicio de la segunda fila
+    lcd.print("Humedad: "); // Mostramos el texto "Humedad: "
     lcd.print(humidity);
     lcd.print(" %");
   }

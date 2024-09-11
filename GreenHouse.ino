@@ -32,7 +32,7 @@ bool pumpOn = false; // Estado de la bomba
 
 // Función de configuración
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); // Inicializamos el puerto serie en 9600 baudios
   
   sensor = new DHTSensor(DHTPIN, DHTTYPE); 
   sensor->begin(); // Inicializamos el sensor

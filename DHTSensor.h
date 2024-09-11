@@ -1,8 +1,8 @@
 #ifndef DHTSENSOR_H
 #define DHTSENSOR_H
 
-#include <DHT.h>
-#include "Sensor.h"
+#include <DHT.h> // Incluimos la librería del sensor DHT
+#include "Sensor.h" // Incluimos la clase base Sensor
 
 class DHTSensor : public Sensor {
 private:
