@@ -5,6 +5,7 @@
 // Esta clase define la interfaz para mostrar la temperatura y la humedad en una pantalla
 class Display {
 public:
+  // Definimos los métodos virtuales que deben ser implementados por las clases derivadas
   virtual void begin() = 0;
   virtual void showTemperature(float temperature) = 0;
   virtual void showHumidity(float humidity) = 0;
