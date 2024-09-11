@@ -12,7 +12,7 @@ public:
     : lcd(rs, enable, d4, d5, d6, d7) {}
   
   void begin() override {
-    lcd.begin(16, 2); //iniciialized the lcd with 16 columns and 2 rows
+    lcd.begin(16, 2); // Inicializamos la pantalla LCD de 16x2
   }
   
   void showTemperature(float temperature) override {
@@ -24,7 +24,7 @@ public:
   
   void showHumidity(float humidity) override {
     lcd.setCursor(0, 1);
-    lcd.print("Humidity: ");
+    lcd.print("Humedad: ");
     lcd.print(humidity);
     lcd.print(" %");
   }

@@ -2,48 +2,52 @@
 #include "LCDDisplay.h"
 #include "ActuatorController.h"
 
-// Constants
-#define DHTPIN 13          // Pin where the DHT11 is connected
-#define DHTTYPE DHT11     // DHT 11
-#define FAN_PIN 6         // Pin for the fan motor
-#define PUMP_PIN 7        // Pin for the water pump
-#define GREEN_LED_PIN 11   // Pin for the green LED
-#define RED_LED_PIN 12     // Pin for the red LED
+// Declaramos las constantes
+#define DHTPIN 13          // Pin donde está conectado el DHT11
+#define DHTTYPE DHT11      // DHT 11
+#define FAN_PIN 6          // Pin para el motor del ventilador
+#define PUMP_PIN 7         // Pin para la bomba de agua
+#define GREEN_LED_PIN 11   // Pin para el LED verde
+#define RED_LED_PIN 12     // Pin para el LED rojo
 
-#define TEMP_THRESHOLD 25 // Temperature threshold in °C
-#define HUM_THRESHOLD 40  // Humidity threshold in %
+#define RW_PIN 9           // Pin para el pin RW de la pantalla LCD
 
-#define TEMP_HYSTERESIS 0 // Temperature hysteresis in °C
-#define HUM_HYSTERESIS 0  // Humidity hysteresis in %
+#define TEMP_THRESHOLD 25  // Umbral de temperatura en °C
+#define HUM_THRESHOLD 40   // Umbral de humedad en %
 
-#define TEMP_INTERVAL 2000 // Interval for temperature check in milliseconds
-#define HUM_INTERVAL 2000  // Interval for humidity check in milliseconds
+#define TEMP_HYSTERESIS 0  // Histéresis de temperatura en °C
+#define HUM_HYSTERESIS 0   // Histéresis de humedad en %
 
-Sensor* sensor; // DHT11 sensor
-Display* display; // LCD display
-ActuatorController* actuatorController; // Actuator controller
-unsigned long previousTempMillis = 0; // Previous time for temperature check
-unsigned long previousHumMillis = 0; // Previous time for humidity check
+#define TEMP_INTERVAL 2000 // Intervalo para la verificación de temperatura en milisegundos
+#define HUM_INTERVAL 2000  // Intervalo para la verificación de humedad en milisegundos
 
-bool fanOn = false; // State of the fan
-bool pumpOn = false; // State of the pump
+Sensor* sensor; // Sensor DHT11
+Display* display; // Pantalla LCD
+ActuatorController* actuatorController; // Controlador de actuadores
+unsigned long previousTempMillis = 0; // Tiempo anterior para la verificación de temperatura
+unsigned long previousHumMillis = 0; // Tiempo anterior para la verificación de humedad
 
-// Setup function
+bool fanOn = false; // Estado del ventilador
+bool pumpOn = false; // Estado de la bomba
+
+// Función de configuración
 void setup() {
   Serial.begin(9600);
   
   sensor = new DHTSensor(DHTPIN, DHTTYPE); 
-  sensor->begin(); // Initialize the sensor
+  sensor->begin(); // Inicializamos el sensor
   
-  // RW Pin is not used, so it is connected to GND, because the display stays in write mode
-  display = new LCDDisplay(10, 8, 5, 4, 3, 2); // Display pin configuration
-  display->begin(); // Initialize the display
+  // El pin RW no se usa, así que se conecta a GND, porque la pantalla permanece en modo escritura
+  // seteamos el pin RW como salida y lo ponemos en LOW
+  pinMode(RW_PIN, OUTPUT);
+  display = new LCDDisplay(10, 8, 5, 4, 3, 2); // Configuración de pines de la pantalla
+  display->begin(); // Inicializamos la pantalla
   
   actuatorController = new ActuatorController(FAN_PIN, PUMP_PIN, GREEN_LED_PIN, RED_LED_PIN);
-  actuatorController->begin(); // Initialize the actuator controller
+  actuatorController->begin(); // Inicializamos el controlador de actuadores
 }
 
-// Main loop
+// Bucle principal
 void loop() {
   unsigned long currentMillis = millis();
 
@@ -62,11 +66,11 @@ void checkTemperature() {
   float temperature = sensor->readTemperature();
 
   if (isnan(temperature)) {
-    Serial.println("Failed to read temperature from sensor!");
+    Serial.println("¡Error al leer la temperatura del sensor!");
     return;
   }
 
-  Serial.print("Temperature: ");
+  Serial.print("Temperatura: ");
   Serial.print(temperature);
   Serial.println(" *C");
 
@@ -89,11 +93,11 @@ void checkHumidity() {
   float humidity = sensor->readHumidity();
 
   if (isnan(humidity)) {
-    Serial.println("Failed to read humidity from sensor!");
+    Serial.println("¡Error al leer la humedad del sensor!");
     return;
   }
 
-  Serial.print("Humidity: ");
+  Serial.print("Humedad: ");
   Serial.print(humidity);
   Serial.println(" %");
 
