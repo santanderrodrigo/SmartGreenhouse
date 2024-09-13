@@ -6,8 +6,10 @@ LCDDisplay::LCDDisplay(int rs, int rw, int enable, int d4, int d5, int d6, int d
 
 // Implementación del método begin
 void LCDDisplay::begin() {
+  //el pin RW lo dejamos en bajo ya que siempre estaremos escribiendo en la pantalla.
   pinMode(rwPin, OUTPUT);
   digitalWrite(rwPin, LOW);
+
   lcd.begin(16, 2); 
   lcd.clear();
 }
