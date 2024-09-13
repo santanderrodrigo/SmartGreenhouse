@@ -12,7 +12,6 @@ public:
   void begin() override;
   void showTemperature(float temperature) override;
   void showHumidity(float humidity) override;
-
 private:
   LiquidCrystal lcd;
 };

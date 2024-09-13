@@ -6,14 +6,15 @@ LCDDisplay::LCDDisplay(int rs, int enable, int d4, int d5, int d6, int d7)
 
 // Implementación del método begin
 void LCDDisplay::begin() {
-  lcd.begin(16, 2); // Inicializa la pantalla LCD con 16 columnas y 2 filas
+  lcd.begin(16, 2); 
+  lcd.clear();
 }
 
 // Implementación del método showTemperature
 void LCDDisplay::showTemperature(float temperature) {
   lcd.setCursor(0, 0); // Establece el cursor en la primera columna de la primera fila
   lcd.print("Temp: ");
-  lcd.print(temperature);
+  lcd.print(temperature, 2); 
   lcd.print(" C");
 }
 
@@ -21,6 +22,6 @@ void LCDDisplay::showTemperature(float temperature) {
 void LCDDisplay::showHumidity(float humidity) {
   lcd.setCursor(0, 1); // Establece el cursor en la primera columna de la segunda fila
   lcd.print("Hum: ");
-  lcd.print(humidity);
+  lcd.print(humidity, 2);
   lcd.print(" %");
 }

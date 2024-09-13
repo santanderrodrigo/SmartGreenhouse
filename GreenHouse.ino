@@ -3,8 +3,8 @@
 #include "ActuatorController.h" // Incluímos la clase ActuatorController
 
 // Declaramos las constantes
-#define DHTPIN 13          // Pin donde está conectado el DHT11
-#define DHTTYPE DHT11      // DHT 11
+#define DHTPIN 13          // Pin donde está conectado el DHT11 -> pin 13 en uno //
+#define DHTTYPE DHT11      // DHT 11 or DHT 22
 #define FAN_PIN 6          // Pin para el motor del ventilador
 #define PUMP_PIN 7         // Pin para la bomba de agua
 #define GREEN_LED_PIN 11   // Pin para el LED verde
@@ -39,11 +39,16 @@ void setup() {
   
   // El pin RW no se usa, así que se conecta a GND, porque la pantalla permanece en modo escritura
   pinMode(RW_PIN, OUTPUT);   // Seteamos el pin RW como salida y lo ponemos en LOW
-  display = new LCDDisplay(10, 8, 5, 4, 3, 2); // Configuración de pines de la pantalla
+  pinMode(RW_PIN, LOW);
+  display = new LCDDisplay(10, 8, 5, 4, 3, 2); // Configuración de pines de la pantalla LCD
+
   display->begin(); // Inicializamos la pantalla
   
   actuatorController = new ActuatorController(FAN_PIN, PUMP_PIN, GREEN_LED_PIN, RED_LED_PIN);
   actuatorController->begin(); // Inicializamos el controlador de actuadores
+
+ 
+  
 }
 
 // Bucle principal, se ejecuta continuamente
@@ -118,12 +123,14 @@ void checkHumidity() {
     // Si la humedad es mayor o igual al umbral más la histéresis, apagamos la bomba
     if (humidity >= HUM_THRESHOLD + HUM_HYSTERESIS) {
       actuatorController->turnPumpOff(); // Apagamos la bomba
+      Serial.print("Apagamos la bomba");
       pumpOn = false;
     }
   } else {
     // Si la humedad es menor o igual al umbral, encendemos la bomba
     if (humidity <= HUM_THRESHOLD) {
       actuatorController->turnPumpOn(); // Encendemos la bomba
+      Serial.print("Encendemos la bomba");
       pumpOn = true;
     }
   }

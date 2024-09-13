@@ -10,6 +10,9 @@ void ActuatorController::begin() {
   pinMode(pumpPin, OUTPUT);
   pinMode(greenLedPin, OUTPUT);
   pinMode(redLedPin, OUTPUT);
+
+   //dado que al iniciar la bomba esá apagada encendemos el LED rojo
+   digitalWrite(redLedPin, HIGH);
 }
 
 // Implementación del método turnFanOn
@@ -26,10 +29,12 @@ void ActuatorController::turnFanOff() {
 void ActuatorController::turnPumpOn() {
   digitalWrite(pumpPin, HIGH);
   digitalWrite(greenLedPin, HIGH);
+  digitalWrite(redLedPin, LOW);
 }
 
 // Implementación del método turnPumpOff
 void ActuatorController::turnPumpOff() {
   digitalWrite(pumpPin, LOW);
   digitalWrite(greenLedPin, LOW);
+  digitalWrite(redLedPin, HIGH);
 }
