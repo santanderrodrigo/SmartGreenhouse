@@ -2,15 +2,39 @@
 #include "LCDDisplay.h" // Incluímos la clase LCDDisplay
 #include "ActuatorController.h" // Incluímos la clase ActuatorController
 
-// Declaramos las constantes
-#define DHTPIN 13          // Pin donde está conectado el DHT11 -> pin 13 en uno //
-#define DHTTYPE DHT11      // DHT 11 or DHT 22
-#define FAN_PIN 6          // Pin para el motor del ventilador
-#define PUMP_PIN 7         // Pin para la bomba de agua
-#define GREEN_LED_PIN 11   // Pin para el LED verde
-#define RED_LED_PIN 12     // Pin para el LED rojo
+#if defined(ARDUINO_AVR_UNO)
+  #define DHTPIN 13          // Pin donde está conectado el DHT11 -> pin 13 en uno //
+  #define FAN_PIN 6          // Pin para el motor del ventilador
+  #define PUMP_PIN 7         // Pin para la bomba de agua
+  #define GREEN_LED_PIN 11   // Pin para el LED verde
+  #define RED_LED_PIN 12     // Pin para el LED rojo
 
-#define RW_PIN 9           // Pin para el pin RW de la pantalla LCD
+  #define RW_PIN 9           // Pin RW de la pantalla LCD
+  #define RS_PIN 10          
+  #define E_PIN 8
+  #define D4_PIN 5
+  #define D5_PIN 4
+  #define D6_PIN 3
+  #define D7_PIN 2 
+#elif defined(ARDUINO_AVR_MEGA2560)
+  #define DHTPIN 14          // Pin donde está conectado el DHT11 --> en mega usamos el puerto 14 porque el 13 posee un led asociado
+  #define FAN_PIN 6          // Pin para el motor del ventilador
+  #define PUMP_PIN 7         // Pin para la bomba de agua
+  #define GREEN_LED_PIN 11   // Pin para el LED verde
+  #define RED_LED_PIN 12     // Pin para el LED rojo
+  
+  #define RW_PIN 9           // Pin RW de la pantalla LCD
+  #define RS_PIN 10          
+  #define E_PIN 8
+  #define D4_PIN 5
+  #define D5_PIN 4
+  #define D6_PIN 3
+  #define D7_PIN 2 
+#else
+  #error "Esta configuración está diseñada para Arduino Uno o Arduino Mega. Por favor, selecciona una de estas placas en el menú Herramientas > Placa."
+#endif
+
+#define DHTTYPE DHT11    // DHT 11 or DHT 22
 
 #define TEMP_THRESHOLD 25  // Umbral de temperatura en °C
 #define HUM_THRESHOLD 40   // Umbral de humedad en %
@@ -38,9 +62,9 @@ void setup() {
   sensor->begin(); // Inicializamos el sensor
   
   // El pin RW no se usa, así que se conecta a GND, porque la pantalla permanece en modo escritura
-  pinMode(RW_PIN, OUTPUT);   // Seteamos el pin RW como salida y lo ponemos en LOW
-  pinMode(RW_PIN, LOW);
-  display = new LCDDisplay(10, 8, 5, 4, 3, 2); // Configuración de pines de la pantalla LCD
+  pinMode(RW_PIN, OUTPUT);   // Seteamos el pin RW como salida
+  pinMode(RW_PIN, LOW);      // Establecemos en LOW el pin
+  display = new LCDDisplay(RS_PIN, E_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN); // Configuración de pines de la pantalla LCD
 
   display->begin(); // Inicializamos la pantalla
   
