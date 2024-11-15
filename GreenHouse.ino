@@ -42,8 +42,8 @@
 const float TEMP_THRESHOLD = 25.0;  // Umbral de temperatura en °C
 const float HUM_THRESHOLD = 40.0;   // Umbral de humedad en %
 
-const float TEMP_HYSTERESIS = 0.0;  // Histéresis de temperatura en °C
-const float HUM_HYSTERESIS = 0.0;   // Histéresis de humedad en %
+const float TEMP_HYSTERESIS = 2.0;  // Histéresis de temperatura en °C
+const float HUM_HYSTERESIS = 2.0;   // Histéresis de humedad en %
 
 const unsigned long TEMP_INTERVAL = 2000; // Intervalo para la verificación de temperatura en milisegundos
 const unsigned long HUM_INTERVAL = 2000;  // Intervalo para la verificación de humedad en milisegundos
@@ -73,8 +73,12 @@ void setup() {
   display = new LCDDisplay(RS_PIN, RW_PIN, E_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN); // Configuración de pines de la pantalla LCD
 
   display->begin(); // Inicializamos la pantalla
+
+  display->showMessage(0,"Iniciando..."); // Mostramos un mensaje en la pantalla
+  delay(500); // Esperamos 0.5 segundos
+  display->showMessage(1,"Smart GreenHouse"); // Mostramos un mensaje en la pantalla
   
-  actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, GREEN_LED_PIN, RED_LED_PIN);
+  actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, PUMP_2_PIN, PUMP_3_PIN);
   actuatorController->begin(); // Inicializamos el controlador de actuadores
 
 }

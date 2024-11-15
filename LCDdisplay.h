@@ -14,6 +14,8 @@ public:
   void begin() override;
   void showTemperature(float temperature) override;
   void showHumidity(float humidity) override;
+  void showMessage(int cursor, const char* message) override;
+  void clear() override { lcd.clear(); }
 private:
   LiquidCrystal lcd;
 };

@@ -9,6 +9,8 @@ public:
   virtual void begin() = 0;
   virtual void showTemperature(float temperature) = 0;
   virtual void showHumidity(float humidity) = 0;
+  virtual void showMessage(int cursor, const char* message) = 0; 
+  virtual void clear() = 0;
 };
 
 #endif

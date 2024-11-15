@@ -41,10 +41,10 @@ void EthernetController::handleClient() {
         }
 
         if (currentLine.endsWith("GET /FAN_ON")) {
-          digitalWrite(FAN_PIN, HIGH);
+          digitalWrite(45, HIGH);
         }
         if (currentLine.endsWith("GET /FAN_OFF")) {
-          digitalWrite(FAN_PIN, LOW);
+          digitalWrite(45, LOW);
         }
       }
     }

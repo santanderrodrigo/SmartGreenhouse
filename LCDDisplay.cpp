@@ -12,6 +12,7 @@ void LCDDisplay::begin() {
 
   lcd.begin(16, 2); 
   lcd.clear();
+
 }
 
 // Implementación del método showTemperature
@@ -28,4 +29,10 @@ void LCDDisplay::showHumidity(float humidity) {
   lcd.print("Hum: ");
   lcd.print(humidity, 2);
   lcd.print(" %");
+}
+
+// Implementación del método showMessage
+void LCDDisplay::showMessage(int cursor, const char* message) {
+  lcd.setCursor(0, cursor); // Establece el cursor en la primera columna de la fila indicada
+  lcd.print(message);
 }
