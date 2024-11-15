@@ -7,30 +7,30 @@
 
   //Sensores
   #define DHT_PIN 14          // Pin donde está conectado el DHT11 --> en mega usamos el puerto 14
-  #define HUMEDITY_SOIL_1_PIN 14 
-  #define HUMEDITY_SOIL_2_PIN 14 
-  #define HUMEDITY_SOIL_3_PIN 14 
+  #define HUMEDITY_SOIL_1_PIN A0 // Pin donde está conectado el sensor de humedad del suelo 1 
+  #define HUMEDITY_SOIL_2_PIN A1 // Pin donde está conectado el sensor de humedad del suelo 2 
+  #define HUMEDITY_SOIL_3_PIN A2 // Pin donde está conectado el sensor de humedad del suelo 3 
 
   //Actuadores
-  #define FAN_PIN 6          // Pin para el motor del ventilador
-  #define PUMP_1_PIN 7         // Pin para la bomba de agua
-  #define PUMP_2_PIN 7
-  #define PUMP_3_PIN 7
-  #define SPRAYER_PIN 7
+  #define FAN_PIN 25          // Pin para el motor del ventilador
+  #define PUMP_1_PIN 22         // Pin para la bomba de agua
+  #define PUMP_2_PIN 23
+  #define PUMP_3_PIN 24
+  #define SPRAYER_PIN 26
 
   //LCD Display
-  #define RW_PIN 9           // Pin RW de la pantalla LCD
-  #define RS_PIN 10          
+  #define RW_PIN 6           // Pin RW de la pantalla LCD
+  #define RS_PIN 7          
   #define E_PIN 8
-  #define D4_PIN 5
-  #define D5_PIN 4
-  #define D6_PIN 3
-  #define D7_PIN 2
+  #define D4_PIN 9
+  #define D5_PIN 11
+  #define D6_PIN 12
+  #define D7_PIN 13
 
   //ENC28J60 
-  #define ENC28J60_SCK_PIN 13
-  #define ENC28J60_MISO_PIN 12
-  #define ENC28J60_MOSI_PIN 11
+  #define ENC28J60_SCK_PIN 52
+  #define ENC28J60_MISO_PIN 50
+  #define ENC28J60_MOSI_PIN 51
   #define ENC28J60_CS_PIN 10 //IO2 en el diagrama
 
 #else
