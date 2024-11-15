@@ -3,12 +3,22 @@
 #include "ActuatorController.h" // Incluímos la clase ActuatorController
 
 // Perfiles de configuración de pines para Arduino Uno y Arduino Mega
-#if defined(ARDUINO_AVR_UNO)
-  #define DHTPIN 13          // Pin donde está conectado el DHT11 -> pin 13 en uno
+#if defined(ARDUINO_AVR_MEGA2560)
+
+  //Sensores
+  #define DHT_PIN 14          // Pin donde está conectado el DHT11 --> en mega usamos el puerto 14
+  #define HUMEDITY_SOIL_1_PIN 14 
+  #define HUMEDITY_SOIL_2_PIN 14 
+  #define HUMEDITY_SOIL_3_PIN 14 
+
+  //Actuadores
   #define FAN_PIN 6          // Pin para el motor del ventilador
-  #define PUMP_PIN 7         // Pin para la bomba de agua
-  #define GREEN_LED_PIN 11   // Pin para el LED verde
-  #define RED_LED_PIN 12     // Pin para el LED rojo
+  #define PUMP_1_PIN 7         // Pin para la bomba de agua
+  #define PUMP_2_PIN 7
+  #define PUMP_3_PIN 7
+  #define SPRAYER_PIN 7
+
+  //LCD Display
   #define RW_PIN 9           // Pin RW de la pantalla LCD
   #define RS_PIN 10          
   #define E_PIN 8
@@ -16,19 +26,13 @@
   #define D5_PIN 4
   #define D6_PIN 3
   #define D7_PIN 2
-#elif defined(ARDUINO_AVR_MEGA2560)
-  #define DHTPIN 14          // Pin donde está conectado el DHT11 --> en mega usamos el puerto 14
-  #define FAN_PIN 6          // Pin para el motor del ventilador
-  #define PUMP_PIN 7         // Pin para la bomba de agua
-  #define GREEN_LED_PIN 11   // Pin para el LED verde
-  #define RED_LED_PIN 12     // Pin para el LED rojo
-  #define RW_PIN 9           // Pin RW de la pantalla LCD
-  #define RS_PIN 10          
-  #define E_PIN 8
-  #define D4_PIN 5
-  #define D5_PIN 4
-  #define D6_PIN 3
-  #define D7_PIN 2
+
+  //ENC28J60 
+  #define ENC28J60_SCK_PIN 13
+  #define ENC28J60_MISO_PIN 12
+  #define ENC28J60_MOSI_PIN 11
+  #define ENC28J60_CS_PIN 10 //IO2 en el diagrama
+
 #else
   #error "Esta configuración está diseñada para Arduino Uno o Arduino Mega. Por favor, selecciona una de estas placas en el menú Herramientas > Placa."
 #endif
@@ -52,20 +56,25 @@ unsigned long previousTempMillis = 0; // Tiempo anterior para la verificación d
 unsigned long previousHumMillis = 0; // Tiempo anterior para la verificación de humedad
 
 bool fanOn = false; // Estado del ventilador
-bool pumpOn = false; // Estado de la bomba
+bool pumpOn = false; // Estado de la bomba del circuito 1
+bool pump1On = false; // Estado de la bomba del circuito 2
+bool pump2On = false; // Estado de la bomba del circuito 3
+bool sprayerOn = false; // Estado del aspersor de humedad
+
+
 
 // Función de configuración, se ejecuta una vez al inicio
 void setup() {
   Serial.begin(9600); // Inicializamos el puerto serie en 9600 baudios
   
-  sensor = new DHTSensor(DHTPIN, DHTTYPE);  // Configuración del sensor DHT11 e instancia del objeto
+  sensor = new DHTSensor(DHT_PIN, DHTTYPE);  // Configuración del sensor DHT11 e instancia del objeto
   sensor->begin(); // Inicializamos el sensor
   
   display = new LCDDisplay(RS_PIN, RW_PIN, E_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN); // Configuración de pines de la pantalla LCD
 
   display->begin(); // Inicializamos la pantalla
   
-  actuatorController = new ActuatorController(FAN_PIN, PUMP_PIN, GREEN_LED_PIN, RED_LED_PIN);
+  actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, GREEN_LED_PIN, RED_LED_PIN);
   actuatorController->begin(); // Inicializamos el controlador de actuadores
 
 }
