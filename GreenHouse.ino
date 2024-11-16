@@ -4,7 +4,7 @@
 #include "SoilMoistureSensor.h" // Incluímos la clase SoilMoistureSensor
 #include "ControlProfile.h" // Include the ControlProfile header
 #include "TaskScheduler.h" // Incluímos la clase TaskScheduler
-
+#include "TimerManager.h" // Incluímos la clase TimerManager
 
 // Perfiles de configuración de pines para Arduino Uno y Arduino Mega
 #if defined(ARDUINO_AVR_MEGA2560)
@@ -42,16 +42,11 @@
 #endif
 
 #define DHTTYPE DHT11    // DHT 11 or DHT 22
-
-const float TEMP_THRESHOLD = 25.0;  // Umbral de temperatura en °C
-const float HUM_THRESHOLD = 40.0;   // Umbral de humedad en %
-
-const float TEMP_HYSTERESIS = 2.0;  // Histéresis de temperatura en °C
-const float HUM_HYSTERESIS = 2.0;   // Histéresis de humedad en %
-
-const unsigned long TEMP_INTERVAL = 2000; // Intervalo para la verificación de temperatura en milisegundos
-const unsigned long HUM_INTERVAL = 2000;  // Intervalo para la verificación de humedad en milisegundos
-
+#define TEMP_INTERVAL_SCHEDULER 5000 // Intervalo de tiempo para verificar la temperatura
+#define DISPLAY_INTERVAL_SCHEDULER 1000 // Intervalo de tiempo para actualizar la pantalla
+#define TEMP_EXTREME_THRESHOLD 38.0 // Umbral de temperatura extrema
+#define SPRAYER_ON_DURATION 300000 // Duración del aspersor encendido (5 minutos)
+#define SPRAYER_OFF_DURATION 600000 // Duración del aspersor apagado (10 minutos)
 
 Sensor* dhtSensor; // Sensor DHT11
 SoilMoistureSensor* soilSensor1;
@@ -61,13 +56,8 @@ Display* display; // Pantalla LCD
 ActuatorController* actuatorController; // Controlador de actuadores
 ControlProfile* controlProfile; // Perfil de control
 
-
-unsigned long previousTempMillis = 0; // Tiempo anterior para la verificación de temperatura
-unsigned long previousHumMillis = 0; // Tiempo anterior para la verificación de humedad
-
 float currentTemperature = 0.0; // Variable para almacenar la temperatura actual
 float currentHumidity = 0.0; // Variable para almacenar la humedad actual
-
 
 bool fanOn = false; // Estado del ventilador
 bool pump1On = false; // Estado de la bomba del circuito 1
@@ -75,7 +65,11 @@ bool pump2On = false; // Estado de la bomba del circuito 2
 bool pump3On = false; // Estado de la bomba del circuito 3
 bool sprayerOn = false; // Estado del aspersor de humedad
 
-TaskScheduler dhtScheduler(TEMP_INTERVAL);
+int currentScreen = 0; // Variable para rastrear la pantalla actual
+
+TaskScheduler dhtScheduler(TEMP_INTERVAL_SCHEDULER);
+TaskScheduler displayScheduler(DISPLAY_INTERVAL_SCHEDULER);
+TimerManager timerManager;
 
 // Función de configuración, se ejecuta una vez al inicio
 void setup() {
@@ -100,19 +94,30 @@ void setup() {
   actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, PUMP_2_PIN, PUMP_3_PIN, SPRAYER_PIN);
   actuatorController->begin();
 
-   // Crear un perfil de control
+  // Crear un perfil de control
   controlProfile = new ControlProfile(25.0, 40.0, 2.0, 2.0, 15.0, 30.0, 30.0, 60.0, 20.0, 50.0, 60000, 300000);
+
+  // Añadir temporizadores al TimerManager
+  timerManager.addTimer("sprayerOn", SPRAYER_ON_DURATION);
+  timerManager.addTimer("sprayerOff", SPRAYER_OFF_DURATION);
 }
 
 // Bucle principal, se ejecuta continuamente
 void loop() {
-
-  // Verificar la temperatura y la humedad, si shouldRun() es verdadero
   if (dhtScheduler.shouldRun()) {
     currentTemperature = checkTemperature();
     currentHumidity = checkHumidity();
   }
 
+  if (displayScheduler.shouldRun()) {
+    updateDisplay();
+  }
+
+  // Control de temperatura y humedad
+  controlTemperatureHumidity();
+
+  // Control de humedad del suelo
+  controlSoilMoisture();
 }
 
 // Función para verificar la temperatura
@@ -149,4 +154,139 @@ float checkHumidity() {
   display->showHumidity(humidity);
 
   return humidity;
+}
+
+// Función para controlar la temperatura y la humedad
+void controlTemperatureHumidity() {
+  float tempThreshold = controlProfile->getTempThreshold();
+  float tempHysteresis = controlProfile->getTempHysteresis();
+  float humThreshold = controlProfile->getHumThreshold();
+  float humHysteresis = controlProfile->getHumHysteresis();
+
+  // Control del ventilador basado en la temperatura
+  if (currentTemperature >= tempThreshold) {
+    if (!fanOn) {
+      actuatorController->turnFanOn();
+      fanOn = true;
+    }
+  } else if (currentTemperature <= tempThreshold - tempHysteresis) {
+    if (fanOn) {
+      actuatorController->turnFanOff();
+      fanOn = false;
+    }
+  }
+
+  // Control del ventilador basado en la humedad
+  if (currentHumidity >= humThreshold) {
+    if (!fanOn) {
+      actuatorController->turnFanOn();
+      fanOn = true;
+    }
+  } else if (currentHumidity <= humThreshold - humHysteresis) {
+    if (fanOn) {
+      actuatorController->turnFanOff();
+      fanOn = false;
+    }
+  }
+
+  // Control del aspersor basado en la humedad
+  if (currentHumidity <= humThreshold - humHysteresis) {
+    if (!sprayerOn) {
+      actuatorController->turnSprayerOn();
+      sprayerOn = true;
+    }
+  } else {
+    if (sprayerOn) {
+      actuatorController->turnSprayerOff();
+      sprayerOn = false;
+    }
+  }
+
+  // Control del aspersor basado en la temperatura extrema
+  if (currentTemperature >= TEMP_EXTREME_THRESHOLD) {
+    if (sprayerOn) {
+      if (timerManager.shouldRun("sprayerOn")) { // Apagar después de 5 minutos
+        actuatorController->turnSprayerOff();
+        sprayerOn = false;
+        timerManager.start("sprayerOff"); // Iniciar el temporizador de apagado
+      }
+    } else {
+      if (timerManager.shouldRun("sprayerOff")) { // Encender después de 10 minutos
+        actuatorController->turnSprayerOn();
+        sprayerOn = true;
+        timerManager.start("sprayerOn"); // Iniciar el temporizador de encendido
+      }
+    }
+  }
+}
+
+// Función para controlar la humedad del suelo
+void controlSoilMoisture() {
+  float minSoilMoisture = controlProfile->getMinSoilMoisture();
+  float maxSoilMoisture = controlProfile->getMaxSoilMoisture();
+  unsigned long infiltrationTime = controlProfile->getInfiltrationTime();
+  unsigned long irrigationTime = controlProfile->getIrrigationTime();
+
+  float soilMoisture1 = soilSensor1->readValue();
+  float soilMoisture2 = soilSensor2->readValue();
+  float soilMoisture3 = soilSensor3->readValue();
+
+  // Control de la bomba 1
+  if (soilMoisture1 < minSoilMoisture) {
+    if (!pump1On) {
+      actuatorController->turnPump1On();
+      pump1On = true;
+    }
+  } else if (soilMoisture1 > maxSoilMoisture) {
+    if (pump1On) {
+      actuatorController->turnPump1Off();
+      pump1On = false;
+    }
+  }
+
+  // Control de la bomba 2
+  if (soilMoisture2 < minSoilMoisture) {
+    if (!pump2On) {
+      actuatorController->turnPump2On();
+      pump2On = true;
+    }
+  } else if (soilMoisture2 > maxSoilMoisture) {
+    if (pump2On) {
+      actuatorController->turnPump2Off();
+      pump2On = false;
+    }
+  }
+
+  // Control de la bomba 3
+  if (soilMoisture3 < minSoilMoisture) {
+    if (!pump3On) {
+      actuatorController->turnPump3On();
+      pump3On = true;
+    }
+  } else if (soilMoisture3 > maxSoilMoisture) {
+    if (pump3On) {
+      actuatorController->turnPump3Off();
+      pump3On = false;
+    }
+  }
+}
+
+// Función para actualizar la pantalla
+void updateDisplay() {
+  display->clear();
+  if (currentScreen == 0) {
+    String tempMessage = "Temp: " + String(currentTemperature) + "C";
+    String humMessage = "Hum: " + String(currentHumidity) + "%";
+    display->showMessage(0, 0, tempMessage.c_str());
+    display->showMessage(1, 0, humMessage.c_str());
+    currentScreen = 1;
+  } else {
+    String fanMessage = "Fan: " + String(fanOn ? "On" : "Off");
+    String pumpMessage1 = "P1:" + String(pump1On ? "On" : "Off") + " P2:" + String(pump2On ? "On" : "Off");
+    String pumpMessage2 = "P3:" + String(pump3On ? "On" : "Off");
+    display->showMessage(0, 0, fanMessage.c_str());
+    display->showMessage(1, 0, pumpMessage1.c_str());
+    display->showMessage(1, 8, pumpMessage2.c_str());
+    currentScreen = 0;
+  }
 }
