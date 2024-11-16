@@ -1,6 +1,10 @@
 #include "DHTSensor.h" // Incluímos la clase DHTSensor
 #include "LCDDisplay.h" // Incluímos la clase LCDDisplay
 #include "ActuatorController.h" // Incluímos la clase ActuatorController
+#include "SoilMoistureSensor.h" // Incluímos la clase SoilMoistureSensor
+#include "ControlProfile.h" // Include the ControlProfile header
+#include "TaskScheduler.h" // Incluímos la clase TaskScheduler
+
 
 // Perfiles de configuración de pines para Arduino Uno y Arduino Mega
 #if defined(ARDUINO_AVR_MEGA2560)
@@ -49,121 +53,100 @@ const unsigned long TEMP_INTERVAL = 2000; // Intervalo para la verificación de 
 const unsigned long HUM_INTERVAL = 2000;  // Intervalo para la verificación de humedad en milisegundos
 
 
-Sensor* sensor; // Sensor DHT11
+Sensor* dhtSensor; // Sensor DHT11
+SoilMoistureSensor* soilSensor1;
+SoilMoistureSensor* soilSensor2;
+SoilMoistureSensor* soilSensor3;
 Display* display; // Pantalla LCD
 ActuatorController* actuatorController; // Controlador de actuadores
+ControlProfile* controlProfile; // Perfil de control
+
+
 unsigned long previousTempMillis = 0; // Tiempo anterior para la verificación de temperatura
 unsigned long previousHumMillis = 0; // Tiempo anterior para la verificación de humedad
 
+float currentTemperature = 0.0; // Variable para almacenar la temperatura actual
+float currentHumidity = 0.0; // Variable para almacenar la humedad actual
+
+
 bool fanOn = false; // Estado del ventilador
-bool pumpOn = false; // Estado de la bomba del circuito 1
-bool pump1On = false; // Estado de la bomba del circuito 2
-bool pump2On = false; // Estado de la bomba del circuito 3
+bool pump1On = false; // Estado de la bomba del circuito 1
+bool pump2On = false; // Estado de la bomba del circuito 2
+bool pump3On = false; // Estado de la bomba del circuito 3
 bool sprayerOn = false; // Estado del aspersor de humedad
 
-
+TaskScheduler dhtScheduler(TEMP_INTERVAL);
 
 // Función de configuración, se ejecuta una vez al inicio
 void setup() {
-  Serial.begin(9600); // Inicializamos el puerto serie en 9600 baudios
-  
-  sensor = new DHTSensor(DHT_PIN, DHTTYPE);  // Configuración del sensor DHT11 e instancia del objeto
-  sensor->begin(); // Inicializamos el sensor
-  
-  display = new LCDDisplay(RS_PIN, RW_PIN, E_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN); // Configuración de pines de la pantalla LCD
+  Serial.begin(9600);
 
-  display->begin(); // Inicializamos la pantalla
+  dhtSensor = new DHTSensor(DHT_PIN, DHTTYPE);
+  dhtSensor->begin();
 
-  display->showMessage(0,"Iniciando..."); // Mostramos un mensaje en la pantalla
-  delay(500); // Esperamos 0.5 segundos
-  display->showMessage(1,"Smart GreenHouse"); // Mostramos un mensaje en la pantalla
-  
-  actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, PUMP_2_PIN, PUMP_3_PIN);
-  actuatorController->begin(); // Inicializamos el controlador de actuadores
+  soilSensor1 = new SoilMoistureSensor(HUMEDITY_SOIL_1_PIN);
+  soilSensor2 = new SoilMoistureSensor(HUMEDITY_SOIL_2_PIN);
+  soilSensor3 = new SoilMoistureSensor(HUMEDITY_SOIL_3_PIN);
+  soilSensor1->begin();
+  soilSensor2->begin();
+  soilSensor3->begin();
 
+  display = new LCDDisplay(RS_PIN, RW_PIN, E_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN);
+  display->begin();
+  display->showMessage(0, 0, "Iniciando...");
+  delay(500);
+  display->showMessage(0, 1, "Smart GreenHouse");
+
+  actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, PUMP_2_PIN, PUMP_3_PIN, SPRAYER_PIN);
+  actuatorController->begin();
+
+   // Crear un perfil de control
+  controlProfile = new ControlProfile(25.0, 40.0, 2.0, 2.0, 15.0, 30.0, 30.0, 60.0, 20.0, 50.0, 60000, 300000);
 }
 
 // Bucle principal, se ejecuta continuamente
 void loop() {
-  unsigned long currentMillis = millis(); // Obtenemos el tiempo actual en milisegundos
 
-  // Verificamos si ha pasado el intervalo de tiempo para la temperatura
-  if (currentMillis - previousTempMillis >= TEMP_INTERVAL) {
-    previousTempMillis = currentMillis;
-    checkTemperature();
+  // Verificar la temperatura y la humedad, si shouldRun() es verdadero
+  if (dhtScheduler.shouldRun()) {
+    currentTemperature = checkTemperature();
+    currentHumidity = checkHumidity();
   }
 
-  // Verificamos si ha pasado el intervalo de tiempo para la humedad
-  if (currentMillis - previousHumMillis >= HUM_INTERVAL) {
-    previousHumMillis = currentMillis;
-    checkHumidity();
-  }
 }
 
 // Función para verificar la temperatura
-void checkTemperature() {
-  float temperature = sensor->readTemperature(); // Leemos la temperatura del sensor
+float checkTemperature() {
+  float temperature = dhtSensor->readTemperature();
 
-  // Verificamos si la lectura de la temperatura es inválida
   if (isnan(temperature)) {
     Serial.println("¡Error al leer la temperatura del sensor!");
-    return;
+    return NAN;
   }
 
-  // Mostramos la temperatura en el monitor serie
   Serial.print("Temperatura: ");
   Serial.print(temperature);
   Serial.println(" *C");
 
-  display->showTemperature(temperature); // Mostramos la temperatura en la pantalla
+  display->showTemperature(temperature);
 
-  // Verificamos si el ventilador está encendido
-  if (fanOn) {
-    // Si la temperatura es menor o igual al umbral menos la histéresis, apagamos el ventilador
-    if (temperature <= TEMP_THRESHOLD - TEMP_HYSTERESIS) {
-      actuatorController->turnFanOff(); // Apagamos el ventilador
-      fanOn = false;
-    }
-  } else {
-    // Si la temperatura es mayor o igual al umbral, encendemos el ventilador
-    if (temperature >= TEMP_THRESHOLD) {
-      actuatorController->turnFanOn(); // Encendemos el ventilador
-      fanOn = true;
-    }
-  }
+  return temperature;
 }
 
 // Función para verificar la humedad
-void checkHumidity() {
-  float humidity = sensor->readHumidity(); // Leemos la humedad del sensor
+float checkHumidity() {
+  float humidity = dhtSensor->readHumidity();
 
-  // Verificamos si la lectura de la humedad es inválida
   if (isnan(humidity)) {
     Serial.println("¡Error al leer la humedad del sensor!");
-    return;
+    return NAN;
   }
 
-  // Mostramos la humedad en el monitor serie
   Serial.print("Humedad: ");
   Serial.print(humidity);
   Serial.println(" %");
 
-  display->showHumidity(humidity); // Mostramos la humedad en la pantalla
+  display->showHumidity(humidity);
 
-  // Verificamos si la bomba está encendida
-  if (pumpOn) {
-    // Si la humedad es mayor o igual al umbral más la histéresis, apagamos la bomba
-    if (humidity >= HUM_THRESHOLD + HUM_HYSTERESIS) {
-      actuatorController->turnPumpOff(); // Apagamos la bomba
-      Serial.print("Apagamos la bomba");
-      pumpOn = false;
-    }
-  } else {
-    // Si la humedad es menor o igual al umbral, encendemos la bomba
-    if (humidity <= HUM_THRESHOLD) {
-      actuatorController->turnPumpOn(); // Encendemos la bomba
-      Serial.print("Encendemos la bomba");
-      pumpOn = true;
-    }
-  }
+  return humidity;
 }

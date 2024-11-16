@@ -1,54 +1,50 @@
 #include "EthernetController.h"
 
-EthernetController::EthernetController(byte* mac, IPAddress ip, int port) 
+EthernetController::EthernetController(byte* mac, IPAddress ip, int port)
   : server(port) {
   Ethernet.begin(mac, ip);
 }
 
 void EthernetController::begin() {
   server.begin();
-  Serial.print("Servidor iniciado en la IP: ");
-  Serial.println(Ethernet.localIP());
 }
 
 void EthernetController::handleClient() {
+  serveClient();
+}
+
+void EthernetController::registerEndpoint(const String& endpoint, EndpointHandler handler) {
+  endpoints.add(endpoint);
+  handlers.add(handler);
+}
+
+void EthernetController::serveClient() {
   EthernetClient client = server.available();
   if (client) {
-    Serial.println("Nuevo cliente");
-    String currentLine = "";
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        Serial.write(c);
-        if (c == '\n') {
-          if (currentLine.length() == 0) {
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-Type: text/html");
-            client.println("Connection: close");
-            client.println();
-            client.println("<!DOCTYPE HTML>");
-            client.println("<html>");
-            client.println("<h1>Control de Invernadero</h1>");
-            client.println("<p><a href=\"/FAN_ON\">Encender Ventilador</a></p>");
-            client.println("<p><a href=\"/FAN_OFF\">Apagar Ventilador</a></p>");
-            client.println("</html>");
-            break;
-          } else {
-            currentLine = "";
-          }
-        } else if (c != '\r') {
-          currentLine += c;
-        }
+    if (client.available()) {
+      String request = client.readStringUntil('\r');
+      client.flush();
 
-        if (currentLine.endsWith("GET /FAN_ON")) {
-          digitalWrite(45, HIGH);
-        }
-        if (currentLine.endsWith("GET /FAN_OFF")) {
-          digitalWrite(45, LOW);
+      // Parse the request to get the endpoint
+      int start = request.indexOf(' ') + 1;
+      int end = request.indexOf(' ', start);
+      String endpoint = request.substring(start, end);
+
+      // Find and call the handler for the endpoint
+      for (int i = 0; i < endpoints.size(); i++) {
+        if (endpoints.get(i) == endpoint) {
+          handlers.get(i)(client);
+          return;
         }
       }
+
+      // Handle 404 Not Found
+      client.println("HTTP/1.1 404 Not Found");
+      client.println("Content-Type: text/plain");
+      client.println("Connection: close");
+      client.println();
+      client.println("404 Not Found");
     }
     client.stop();
-    Serial.println("Cliente desconectado");
   }
 }
