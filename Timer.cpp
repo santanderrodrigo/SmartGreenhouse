@@ -2,7 +2,7 @@
 
 Timer::Timer(unsigned long interval) : interval(interval), previousMillis(0), active(false) {}
 
-bool Timer::shouldRun() {
+bool Timer::expired() {
   if (!active) return false;
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {

@@ -8,10 +8,10 @@ void TimerManager::addTimer(const String& name, unsigned long interval) {
   }
 }
 
-bool TimerManager::shouldRun(const String& name) {
+bool TimerManager::expired(const String& name) {
   TimerEntry* entry = findTimer(name);
   if (entry) {
-    return entry->timer.shouldRun();
+    return entry->timer.expired();
   }
   return false;
 }

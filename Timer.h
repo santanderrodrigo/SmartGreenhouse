@@ -6,7 +6,7 @@
 class Timer {
 public:
   Timer(unsigned long interval);
-  bool shouldRun();
+  bool expired();
   void start();
   void stop();
   void reset();

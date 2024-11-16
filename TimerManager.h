@@ -8,7 +8,7 @@ class TimerManager {
 public:
   TimerManager();
   void addTimer(const String& name, unsigned long interval);
-  bool shouldRun(const String& name);
+  bool expired(const String& name);
   void start(const String& name);
   void stop(const String& name);
   void reset(const String& name);
