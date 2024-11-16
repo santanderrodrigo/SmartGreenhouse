@@ -87,4 +87,4 @@ Este proyecto está licenciado bajo la **Licencia MIT**. Consulta el archivo `LI
 
 ## 📬 Contacto
 
-Para cualquier consulta o sugerencia, no dudes en [contactarme](mailto:tuemail@ejemplo.com).
+Para cualquier consulta o sugerencia, no dudes en contactarme
