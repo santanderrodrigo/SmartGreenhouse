@@ -1,50 +1,33 @@
 #include "EthernetController.h"
+#include <SPI.h>
 
-EthernetController::EthernetController(byte* mac, IPAddress ip, int port)
-  : server(port) {
-  Ethernet.begin(mac, ip);
-}
+EthernetController::EthernetController(uint8_t* mac, IPAddress ip, uint8_t sckPin, uint8_t misoPin, uint8_t mosiPin, uint8_t csPin)
+    : macAddress(mac), ipAddress(ip), sckPin(sckPin), misoPin(misoPin), mosiPin(mosiPin), csPin(csPin), server(80) {}
 
 void EthernetController::begin() {
-  server.begin();
+    // Configurar los pines SPI
+    pinMode(sckPin, OUTPUT);
+    pinMode(misoPin, INPUT);
+    pinMode(mosiPin, OUTPUT);
+    pinMode(csPin, OUTPUT);
+
+    // Inicializar Ethernet
+    Ethernet.begin(macAddress, ipAddress);
+    Serial.println("Ethernet initialized");
 }
 
 void EthernetController::handleClient() {
-  serveClient();
-}
-
-void EthernetController::registerEndpoint(const String& endpoint, EndpointHandler handler) {
-  endpoints.add(endpoint);
-  handlers.add(handler);
-}
-
-void EthernetController::serveClient() {
-  EthernetClient client = server.available();
-  if (client) {
-    if (client.available()) {
-      String request = client.readStringUntil('\r');
-      client.flush();
-
-      // Parse the request to get the endpoint
-      int start = request.indexOf(' ') + 1;
-      int end = request.indexOf(' ', start);
-      String endpoint = request.substring(start, end);
-
-      // Find and call the handler for the endpoint
-      for (int i = 0; i < endpoints.size(); i++) {
-        if (endpoints.get(i) == endpoint) {
-          handlers.get(i)(client);
-          return;
+    EthernetClient client = server.available();
+    if (client) {
+        Serial.println("New client connected");
+        while (client.connected()) {
+            if (client.available()) {
+                char c = client.read();
+                Serial.write(c);
+                // Handle client request here
+            }
         }
-      }
-
-      // Handle 404 Not Found
-      client.println("HTTP/1.1 404 Not Found");
-      client.println("Content-Type: text/plain");
-      client.println("Connection: close");
-      client.println();
-      client.println("404 Not Found");
+        client.stop();
+        Serial.println("Client disconnected");
     }
-    client.stop();
-  }
 }

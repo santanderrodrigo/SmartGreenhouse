@@ -1,23 +1,22 @@
 #ifndef ETHERNETCONTROLLER_H
 #define ETHERNETCONTROLLER_H
 
-#include <SPI.h>
-#include <Ethernet.h>
-#include <LinkedList.h>
-#include "CommunicationController.h"
+#include <UIPEthernet.h>
 
-class EthernetController : public CommunicationController {
+class EthernetController {
 public:
-  EthernetController(byte* mac, IPAddress ip, int port);
-  void begin() override;
-  void handleClient() override;
-  void registerEndpoint(const String& endpoint, EndpointHandler handler) override;
+    EthernetController(uint8_t* mac, IPAddress ip, uint8_t sckPin, uint8_t misoPin, uint8_t mosiPin, uint8_t csPin);
+    void begin();
+    void handleClient();
 
 private:
-  EthernetServer server;
-  LinkedList<String> endpoints;
-  LinkedList<EndpointHandler> handlers;
-  void serveClient();
+    uint8_t* macAddress;
+    IPAddress ipAddress;
+    uint8_t sckPin;
+    uint8_t misoPin;
+    uint8_t mosiPin;
+    uint8_t csPin;
+    EthernetServer server;
 };
 
-#endif
+#endif // ETHERNETCONTROLLER_H

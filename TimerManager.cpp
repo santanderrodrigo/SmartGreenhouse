@@ -3,6 +3,7 @@
 TimerManager::TimerManager() : timerCount(0) {}
 
 void TimerManager::addTimer(const String& name, unsigned long interval) {
+  Serial.println("Add Timmer");
   if (timerCount < 10) {
     timers[timerCount++] = TimerEntry(name, interval);
   }

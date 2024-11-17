@@ -2,10 +2,11 @@
 
 ControlProfile::ControlProfile(float tempThreshold, float humThreshold, float tempHysteresis, float humHysteresis,
                                float minTemp, float maxTemp, float minHum, float maxHum,
-                               float minSoilMoisture, float maxSoilMoisture, unsigned long infiltrationTime, unsigned long irrigationTime)
+                               float minSoilMoisture, float maxSoilMoisture, float soilMoistureThreshold, unsigned long infiltrationTime, unsigned long irrigationTime)
   : tempThreshold(tempThreshold), humThreshold(humThreshold), tempHysteresis(tempHysteresis), humHysteresis(humHysteresis),
     minTemp(minTemp), maxTemp(maxTemp), minHum(minHum), maxHum(maxHum),
-    minSoilMoisture(minSoilMoisture), maxSoilMoisture(maxSoilMoisture), infiltrationTime(infiltrationTime), irrigationTime(irrigationTime) {}
+    minSoilMoisture(minSoilMoisture), maxSoilMoisture(maxSoilMoisture), soilMoistureThreshold(soilMoistureThreshold),
+    infiltrationTime(infiltrationTime), irrigationTime(irrigationTime) {}
 
 float ControlProfile::getTempThreshold() const {
   return tempThreshold;
@@ -45,6 +46,10 @@ float ControlProfile::getMinSoilMoisture() const {
 
 float ControlProfile::getMaxSoilMoisture() const {
   return maxSoilMoisture;
+}
+
+float ControlProfile::getSoilMoistureThreshold() const {
+  return soilMoistureThreshold;
 }
 
 unsigned long ControlProfile::getInfiltrationTime() const {
