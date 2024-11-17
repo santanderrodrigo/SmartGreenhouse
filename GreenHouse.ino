@@ -6,7 +6,6 @@
 #include "TaskScheduler.h" // Incluímos la clase TaskScheduler
 #include "TimerManager.h" // Incluímos la clase TimerManager
 #include "EthernetController.h" // Incluímos la clase EthernetController
-#include <SPI.h>
 
 // Perfiles de configuración de pines para Arduino Uno y Arduino Mega
 #if defined(ARDUINO_AVR_MEGA2560)
@@ -33,11 +32,7 @@
   #define D6_PIN 12
   #define D7_PIN 13
 
-  //ENC28J60 
-  #define ENC28J60_SCK_PIN 52
-  #define ENC28J60_MISO_PIN 50
-  #define ENC28J60_MOSI_PIN 51
-  #define ENC28J60_CS_PIN 10 //IO2 en el diagrama
+  #define ENC28J60_CS_PIN 53
 
 #else
   #error "Esta configuración está diseñada para Arduino Arduino Mega. Por favor, selecciona esta placa en el menú Herramientas > Placa."
@@ -83,11 +78,7 @@ TaskScheduler dhtScheduler(TEMP_INTERVAL_SCHEDULER);
 TaskScheduler displayScheduler(DISPLAY_INTERVAL_SCHEDULER);
 TimerManager timerManager;
 
-uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-IPAddress ip(192, 168, 1, 177);
-EthernetController ethernetController(mac, ip, ENC28J60_SCK_PIN, ENC28J60_MISO_PIN, ENC28J60_MOSI_PIN, ENC28J60_CS_PIN);
-
-
+EthernetController ethernetController(ENC28J60_CS_PIN); // Pin CS
 
 
 // Función de configuración, se ejecuta una vez al inicio
@@ -122,7 +113,7 @@ void setup() {
   timerManager.addTimer("sprayerOn", SPRAYER_ON_DURATION);
   timerManager.addTimer("sprayerOff", SPRAYER_OFF_DURATION);
 
-  ethernetController.begin();
+  //ethernetController.begin();
 
 
 }
@@ -144,7 +135,7 @@ void loop() {
     controlSoilMoisture();
   }
 
-  ethernetController.handleClient();
+  //ethernetController.handleClient();
 
 }
 
