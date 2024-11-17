@@ -38,9 +38,16 @@
   #error "Esta configuración está diseñada para Arduino Arduino Mega. Por favor, selecciona esta placa en el menú Herramientas > Placa."
 #endif
 
-#define DHTTYPE DHT22
-#define TEMP_INTERVAL_SCHEDULER 5000
-#define DISPLAY_INTERVAL_SCHEDULER 5000
+#define PROTEUS_SIMULATION 1 // 1 si se está ejecutando en Proteus, 0 si se está ejecutando en un Arduino real
+
+#if PROTEUS_SIMULATION
+  #define DHTTYPE DHT11
+#else
+  #define DHTTYPE DHT22
+#endif
+
+#define TEMP_INTERVAL_SCHEDULER 500
+#define DISPLAY_INTERVAL_SCHEDULER 1000
 #define TEMP_EXTREME_THRESHOLD 38.0
 #define SPRAYER_ON_DURATION 300000
 #define SPRAYER_OFF_DURATION 600000
@@ -82,7 +89,9 @@ TaskScheduler dhtScheduler(TEMP_INTERVAL_SCHEDULER);
 TaskScheduler displayScheduler(DISPLAY_INTERVAL_SCHEDULER);
 TimerManager timerManager;
 
+#if !PROTEUS_SIMULATION
 EthernetController ethernetController;
+#endif
 
 void setup() {
     Serial.begin(9600);
@@ -106,12 +115,6 @@ void setup() {
     actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, PUMP_2_PIN, PUMP_3_PIN, SPRAYER_PIN);
     actuatorController->begin();
 
-    actuatorController->turnOn(FAN);
-    actuatorController->turnOn(PUMP1);
-    actuatorController->turnOn(PUMP2);
-    actuatorController->turnOn(PUMP3);
-    actuatorController->turnOn(SPRAYER);
-
     controlProfile = new ControlProfile(TEMP_THRESHOLD_VALUE, HUM_THRESHOLD_VALUE, TEMP_HYSTERESIS_VALUE, HUM_HYSTERESIS_VALUE,
                                         MIN_TEMP_VALUE, MAX_TEMP_VALUE, MIN_HUM_VALUE, MAX_HUM_VALUE,
                                         MIN_SOIL_MOISTURE_VALUE, MAX_SOIL_MOISTURE_VALUE, SOIL_MOISTURE_THERSHOLD_VALUE,
@@ -119,9 +122,18 @@ void setup() {
 
     timerManager.addTimer("sprayerOn", SPRAYER_ON_DURATION);
     timerManager.addTimer("sprayerOff", SPRAYER_OFF_DURATION);
-
+#if !PROTEUS_SIMULATION
     ethernetController.setup();
     ethernetController.setParameters(&currentTemperature, &currentHumidity, actuatorsState, configParameters);
+#endif
+    //leeemos los sensores para que se actualicen los valores
+    currentTemperature = checkTemperature();
+    currentHumidity = checkHumidity();
+
+    display->clear();
+    display->showMessage(0, 0, "Grupo 2 - UPSO");
+    display->showMessage(0, 1, "Sist.Embebidos");
+    delay(500);
 }
 
 void loop() {
@@ -136,13 +148,16 @@ void loop() {
         controlSoilMoisture();
     }
 
+#if !PROTEUS_SIMULATION
     updateActuatorsState();
     ethernetController.loop();
+#endif
 }
 
 float checkTemperature() {
     float temperature = dhtSensor->readTemperature();
-
+    Serial.print(">Temperatura: ");
+    Serial.print(temperature);
     if (isnan(temperature)) {
         Serial.println("¡Error al leer la temperatura del sensor!");
         return NAN;
