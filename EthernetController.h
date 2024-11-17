@@ -1,23 +1,30 @@
 #ifndef ETHERNETCONTROLLER_H
 #define ETHERNETCONTROLLER_H
 
-#include <SPI.h>
-#include <UIPEthernet.h> // Cambiado para usar UIPEthernet
+#define DISABLE_ETHERNET_CHECKSUM
+
+#include <UIPEthernet.h>
 
 class EthernetController {
 public:
-    EthernetController(int csPin);
-    void begin();
-    void handleClient();
+    EthernetController();
+    void setup();
+    void loop();
+    void setParameters(float* temperature, float* humidity, bool* actuators, float* configParams);
 
 private:
-    byte _mac[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-    IPAddress _ip = IPAddress(192, 168, 1, 177);
-    IPAddress _gateway = IPAddress(192, 168, 1, 1);
-    IPAddress _subnet = IPAddress(255, 255, 255, 0);
-    IPAddress _dns = IPAddress(8, 8, 8, 8);
-    int _csPin;
-    EthernetServer server;
+    byte mac[6] = { 0xDD, 0xDD, 0xDD, 0x00, 0x01, 0x05 };
+    IPAddress ip = IPAddress(192, 168, 28, 47);
+    EthernetServer server = EthernetServer(80);
+    const int ledPin = 2;
+    String EstadoLed = "OFF";
+
+    float* currentTemperature;
+    float* currentHumidity;
+    bool* actuatorsState;
+    float* configParameters;
+
+    void homePage(EthernetClient &client);
 };
 
 #endif // ETHERNETCONTROLLER_H
