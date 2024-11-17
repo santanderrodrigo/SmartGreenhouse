@@ -1,11 +1,11 @@
-#include "DHTSensor.h"
-#include "LCDDisplay.h"
-#include "ActuatorController.h"
-#include "SoilMoistureSensor.h"
-#include "ControlProfile.h"
-#include "TaskScheduler.h"
-#include "TimerManager.h"
-#include "EthernetController.h"
+#include "DHTSensor.h" // Incluimos el sensor DHT
+#include "LCDDisplay.h" // Incluimos la clase para el display LCD
+#include "ActuatorController.h" // Incluimos el controlador de actuadores
+#include "SoilMoistureSensor.h" // Incluimos el sensor de humedad del suelo
+#include "ControlProfile.h" // Incluimos el perfil de control
+#include "TaskScheduler.h" // Incluimos el planificador de tareas
+#include "TimerManager.h" // Incluimos el gestor de temporizadores
+#include "EthernetController.h" // Incluimos el controlador de Ethernet
 
 // Perfiles de configuración de pines para Arduino Uno y Arduino Mega
 #if defined(ARDUINO_AVR_MEGA2560)
@@ -38,12 +38,13 @@
   #error "Esta configuración está diseñada para Arduino Arduino Mega. Por favor, selecciona esta placa en el menú Herramientas > Placa."
 #endif
 
+// Establecemos la configuración para la simulación en Proteus
 #define PROTEUS_SIMULATION 1 // 1 si se está ejecutando en Proteus, 0 si se está ejecutando en un Arduino real
 
 #if PROTEUS_SIMULATION
-  #define DHTTYPE DHT11
+  #define DHTTYPE DHT11 // Usamos el sensor DHT11 en la simulación, ya que el DHT22 no está soportado
 #else
-  #define DHTTYPE DHT22
+  #define DHTTYPE DHT22 // Usamos el sensor DHT22 en el Arduino real
 #endif
 
 #define TEMP_INTERVAL_SCHEDULER 500
@@ -90,15 +91,19 @@ TaskScheduler displayScheduler(DISPLAY_INTERVAL_SCHEDULER);
 TimerManager timerManager;
 
 #if !PROTEUS_SIMULATION
-EthernetController ethernetController;
+// En la simulación en Proteus no se utiliza la conexión Ethernet, ya que se rompe la simulación
+EthernetController ethernetController; 
 #endif
 
 void setup() {
+    // Inicializamos el puerto serie a 9600 baudios
     Serial.begin(9600);
 
+    // Inicializamos el sensor DHT
     dhtSensor = new DHTSensor(DHT_PIN, DHTTYPE);
     dhtSensor->begin();
 
+    // Inicializamos los sensores de humedad del suelo
     soilSensor1 = new SoilMoistureSensor(HUMEDITY_SOIL_1_PIN);
     soilSensor2 = new SoilMoistureSensor(HUMEDITY_SOIL_2_PIN);
     soilSensor3 = new SoilMoistureSensor(HUMEDITY_SOIL_3_PIN);
@@ -106,27 +111,34 @@ void setup() {
     soilSensor2->begin();
     soilSensor3->begin();
 
+    // Inicializamos el display LCD
     display = new LCDDisplay(RS_PIN, RW_PIN, E_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN);
     display->begin();
     display->showMessage(0, 0, "Iniciando...");
     delay(500);
     display->showMessage(0, 1, "Smart GreenHouse");
 
+    // Inicializamos el controlador de actuadores
     actuatorController = new ActuatorController(FAN_PIN, PUMP_1_PIN, PUMP_2_PIN, PUMP_3_PIN, SPRAYER_PIN);
     actuatorController->begin();
 
+    // Inicializamos el perfil de control, se usará en el futuro para gestionar diferentes perfiles
     controlProfile = new ControlProfile(TEMP_THRESHOLD_VALUE, HUM_THRESHOLD_VALUE, TEMP_HYSTERESIS_VALUE, HUM_HYSTERESIS_VALUE,
                                         MIN_TEMP_VALUE, MAX_TEMP_VALUE, MIN_HUM_VALUE, MAX_HUM_VALUE,
                                         MIN_SOIL_MOISTURE_VALUE, MAX_SOIL_MOISTURE_VALUE, SOIL_MOISTURE_THERSHOLD_VALUE,
                                         INFILTRATION_TIME_VALUE, IRRIGATION_TIME_VALUE);
 
+    // Inicializamos los planificadores de tareas
     timerManager.addTimer("sprayerOn", SPRAYER_ON_DURATION);
     timerManager.addTimer("sprayerOff", SPRAYER_OFF_DURATION);
-#if !PROTEUS_SIMULATION
-    ethernetController.setup();
-    ethernetController.setParameters(&currentTemperature, &currentHumidity, actuatorsState, configParameters);
-#endif
-    //leeemos los sensores para que se actualicen los valores
+
+    #if !PROTEUS_SIMULATION
+        // Inicializamos el controlador Ethernet
+        ethernetController.setup();
+        ethernetController.setParameters(&currentTemperature, &currentHumidity, actuatorsState, configParameters);
+    #endif
+
+    //leeemos los sensores para que se actualicen los valores al inicio
     currentTemperature = checkTemperature();
     currentHumidity = checkHumidity();
 
@@ -136,12 +148,14 @@ void setup() {
     delay(500);
 }
 
+// Función principal del programa
 void loop() {
+    // Verificamos si el planificador de tareas para la lectura del DHT se debe ejecutar
     if (dhtScheduler.shouldRun()) {
         currentTemperature = checkTemperature();
         currentHumidity = checkHumidity();
     }
-
+    // Verificamos si el planificador de tareas para el display y lso actuadores se debe ejecutar
     if (displayScheduler.shouldRun()) {
         updateDisplay();
         controlTemperatureHumidity();
@@ -149,11 +163,15 @@ void loop() {
     }
 
 #if !PROTEUS_SIMULATION
+    // Actualizamos el estado de los actuadores para enviarlo al controlador Ethernet
     updateActuatorsState();
+    // Ejecutamos el controlador Ethernet para que acepte conexiones de clientes
     ethernetController.loop();
 #endif
 }
 
+
+// Lee la temperatura del sensor DHT
 float checkTemperature() {
     float temperature = dhtSensor->readTemperature();
     Serial.print(">Temperatura: ");
@@ -170,14 +188,16 @@ float checkTemperature() {
     return temperature;
 }
 
+// Lee la humedad del sensor DHT
 float checkHumidity() {
+    // Lee la humedad del sensor DHT
     float humidity = dhtSensor->readHumidity();
-
+    // Verifica si la lectura es correcta
     if (isnan(humidity)) {
         Serial.println("¡Error al leer la humedad del sensor!");
         return NAN;
     }
-
+    // Muestra la humedad en el monitor serie
     Serial.print("Humedad: ");
     Serial.print(humidity);
     Serial.println(" %");
@@ -185,18 +205,22 @@ float checkHumidity() {
     return humidity;
 }
 
+// Controla la temperatura y la humedad del ambiente
 void controlTemperatureHumidity() {
+    // Obtenemos los valores de los umbrales y las histeresis del perfil de control
     float tempThershold = controlProfile->getTempThreshold();
     float humThreshold = controlProfile->getHumThreshold();
     float tempHysteresis = controlProfile->getTempHysteresis();
     float humHysteresis = controlProfile->getHumHysteresis();
 
+    // Verificamos si la temperatura supera el umbral
     if (currentTemperature > tempThershold && !actuatorController->isOn(FAN)) {
         actuatorController->turnOn(FAN);
     } else if (currentTemperature < (tempThershold - tempHysteresis) && actuatorController->isOn(FAN)) {
         actuatorController->turnOff(FAN);
     }
 
+    // Verificamos si la humedad supera el umbral
     if (currentHumidity < humThreshold && !actuatorController->isOn(SPRAYER)) {
         actuatorController->turnOn(SPRAYER);
     } else if (currentHumidity > (humThreshold - humHysteresis) && actuatorController->isOn(SPRAYER)) {
@@ -204,11 +228,12 @@ void controlTemperatureHumidity() {
     }
 }
 
+// Controla la humedad del suelo para los goteros de riego
 void controlSoilMoisture() {
     float soilMoistureThreshold = controlProfile->getSoilMoistureThreshold();
     float soilMoistureHysteresis = 2;
-    unsigned long infiltrationTime = controlProfile->getInfiltrationTime();
-    unsigned long irrigationTime = controlProfile->getIrrigationTime();
+    unsigned long infiltrationTime = controlProfile->getInfiltrationTime(); //uso futuro
+    unsigned long irrigationTime = controlProfile->getIrrigationTime(); //uso futuro
 
     float soilMoisture1 = soilSensor1->readValue();
     float soilMoisture2 = soilSensor2->readValue();
@@ -248,6 +273,7 @@ void controlSoilMoisture() {
     }
 }
 
+// Actualiza el contenido del display LCD
 void updateDisplay() {
     display->clear();
 
@@ -315,6 +341,7 @@ void updateDisplay() {
     Serial.println(actuatorController->isOn(PUMP3) ? "ON" : "OFF");
 }
 
+// Actualiza el estado de los actuadores para poder pasarlos al controlador Ethernet
 void updateActuatorsState() {
     actuatorsState[0] = actuatorController->isOn(FAN);
     actuatorsState[1] = actuatorController->isOn(SPRAYER);
