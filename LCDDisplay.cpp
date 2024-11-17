@@ -2,11 +2,11 @@
 
 // Constructor de la clase LCDDisplay
 LCDDisplay::LCDDisplay(int rs, int rw, int enable, int d4, int d5, int d6, int d7)
-  : lcd(rs, enable, d4, d5, d6, d7) , rwPin(rw){}
+  : lcd(rs, enable, d4, d5, d6, d7), rwPin(rw) {}
 
 // Implementación del método begin
 void LCDDisplay::begin() {
-  //el pin RW lo dejamos en bajo ya que siempre estaremos escribiendo en la pantalla.
+  // El pin RW lo dejamos en bajo ya que siempre estaremos escribiendo en la pantalla.
   pinMode(rwPin, OUTPUT);
   digitalWrite(rwPin, LOW);
 
@@ -28,4 +28,15 @@ void LCDDisplay::showHumidity(float humidity) {
   lcd.print("Hum: ");
   lcd.print(humidity, 2);
   lcd.print(" %");
+}
+
+// Implementación del método showMessage
+void LCDDisplay::showMessage(int x, int y, const char* message) {
+  lcd.setCursor(x, y); // Establece el cursor en la columna x y fila y indicadas
+  lcd.print(message);
+}
+
+// Implementación del método clear
+void LCDDisplay::clear() {
+  lcd.clear();
 }

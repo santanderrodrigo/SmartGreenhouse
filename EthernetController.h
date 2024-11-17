@@ -1,17 +1,30 @@
 #ifndef ETHERNETCONTROLLER_H
 #define ETHERNETCONTROLLER_H
 
-#include <SPI.h>
-#include <Ethernet.h>
+#define DISABLE_ETHERNET_CHECKSUM
+
+#include <UIPEthernet.h>
 
 class EthernetController {
 public:
-  EthernetController(byte* mac, IPAddress ip, int port);
-  void begin();
-  void handleClient();
+    EthernetController();
+    void setup();
+    void loop();
+    void setParameters(float* temperature, float* humidity, bool* actuators, float* configParams);
 
 private:
-  EthernetServer server;
+    byte mac[6] = { 0xDD, 0xDD, 0xDD, 0x00, 0x01, 0x05 };
+    IPAddress ip = IPAddress(192, 168, 28, 47);
+    EthernetServer server = EthernetServer(80);
+    const int ledPin = 2;
+    String EstadoLed = "OFF";
+
+    float* currentTemperature;
+    float* currentHumidity;
+    bool* actuatorsState;
+    float* configParameters;
+
+    void homePage(EthernetClient &client);
 };
 
-#endif
+#endif // ETHERNETCONTROLLER_H
