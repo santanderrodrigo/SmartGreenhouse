@@ -47,36 +47,35 @@
   #define DHTTYPE DHT22 // Usamos el sensor DHT22 en el Arduino real
 #endif
 
-#define TEMP_INTERVAL_SCHEDULER 500
-#define DISPLAY_INTERVAL_SCHEDULER 1000
-#define TEMP_EXTREME_THRESHOLD 38.0
-#define SPRAYER_ON_DURATION 300000
-#define SPRAYER_OFF_DURATION 600000
+#define TEMP_INTERVAL_SCHEDULER 500 // Intervalo de lectura de temperatura y humedad
+#define DISPLAY_INTERVAL_SCHEDULER 1000 // Intervalo de actualización del display
+#define SPRAYER_ON_DURATION 300000 // Duración de encendido del aspersor implementacion futura
+#define SPRAYER_OFF_DURATION 600000  // Duración de apagado del aspersor implementacion futura
+ 
+#define TEMP_THRESHOLD_VALUE 25.0 // Umbral de temperatura
+#define HUM_THRESHOLD_VALUE 50.0 // Umbral de humedad
+#define TEMP_HYSTERESIS_VALUE 2.0 // Histeresis de temperatura
+#define HUM_HYSTERESIS_VALUE 2.0 // Histeresis de humedad
+#define MIN_TEMP_VALUE 15.0 // Temperatura mínima
+#define MAX_TEMP_VALUE 30.0 // Temperatura máxima
+#define MIN_HUM_VALUE 30.0 // Humedad mínima
+#define MAX_HUM_VALUE 80.0 // Humedad máxima
+#define SOIL_MOISTURE_THERSHOLD_VALUE 20.0 // Umbral de humedad del suelo
+#define MIN_SOIL_MOISTURE_VALUE 20.0 // Humedad mínima del suelo
+#define MAX_SOIL_MOISTURE_VALUE 50.0 // Humedad máxima del suelo
+#define INFILTRATION_TIME_VALUE 600 // Tiempo de infiltración //implementacion futura
+#define IRRIGATION_TIME_VALUE 1200 // Tiempo de riego //implementacion futura
 
-#define TEMP_THRESHOLD_VALUE 25.0
-#define HUM_THRESHOLD_VALUE 50.0
-#define TEMP_HYSTERESIS_VALUE 2.0
-#define HUM_HYSTERESIS_VALUE 2.0
-#define MIN_TEMP_VALUE 15.0
-#define MAX_TEMP_VALUE 30.0
-#define MIN_HUM_VALUE 30.0
-#define MAX_HUM_VALUE 60.0
-#define SOIL_MOISTURE_THERSHOLD_VALUE 20.0
-#define MIN_SOIL_MOISTURE_VALUE 20.0
-#define MAX_SOIL_MOISTURE_VALUE 50.0
-#define INFILTRATION_TIME_VALUE 600
-#define IRRIGATION_TIME_VALUE 1200
+Sensor* dhtSensor; // Creamos un objeto del sensor DHT
+SoilMoistureSensor* soilSensor1; // Creamos un objeto del sensor de humedad del suelo
+SoilMoistureSensor* soilSensor2; // Creamos un objeto del sensor de humedad del suelo
+SoilMoistureSensor* soilSensor3; // Creamos un objeto del sensor de humedad del suelo
+Display* display; // Creamos un objeto del display LCD
+ActuatorController* actuatorController; // Creamos un objeto del controlador de actuadores
+ControlProfile* controlProfile; // Creamos un objeto del perfil de control
 
-Sensor* dhtSensor;
-SoilMoistureSensor* soilSensor1;
-SoilMoistureSensor* soilSensor2;
-SoilMoistureSensor* soilSensor3;
-Display* display;
-ActuatorController* actuatorController;
-ControlProfile* controlProfile;
-
-float currentTemperature = NAN;
-float currentHumidity = NAN;
+float currentTemperature = NAN; // Variable para almacenar la temperatura actual
+float currentHumidity = NAN; // Variable para almacenar la humedad actual
 
 bool actuatorsState[5] = {false, false, false, false, false};
 float configParameters[8] = {
@@ -84,11 +83,11 @@ float configParameters[8] = {
     MIN_SOIL_MOISTURE_VALUE, MAX_SOIL_MOISTURE_VALUE, INFILTRATION_TIME_VALUE, IRRIGATION_TIME_VALUE
 };
 
-int currentScreen = 0;
+int currentScreen = 0; // Variable para controlar la pantalla actual
 
-TaskScheduler dhtScheduler(TEMP_INTERVAL_SCHEDULER);
-TaskScheduler displayScheduler(DISPLAY_INTERVAL_SCHEDULER);
-TimerManager timerManager;
+TaskScheduler dhtScheduler(TEMP_INTERVAL_SCHEDULER);   // Creamos un planificador de tareas para la lectura del DHT
+TaskScheduler displayScheduler(DISPLAY_INTERVAL_SCHEDULER); // Creamos un planificador de tareas para el display y los actuadores
+TimerManager timerManager; // Creamos un gestor de temporizadores
 
 #if !PROTEUS_SIMULATION
 // En la simulación en Proteus no se utiliza la conexión Ethernet, ya que se rompe la simulación
@@ -157,9 +156,9 @@ void loop() {
     }
     // Verificamos si el planificador de tareas para el display y lso actuadores se debe ejecutar
     if (displayScheduler.shouldRun()) {
-        updateDisplay();
-        controlTemperatureHumidity();
-        controlSoilMoisture();
+        updateDisplay(); // Actualizamos el contenido del display
+        controlTemperatureHumidity(); // Controlamos la temperatura y la humedad
+        controlSoilMoisture(); // Controlamos la humedad del suelo
     }
 
 #if !PROTEUS_SIMULATION
@@ -171,7 +170,7 @@ void loop() {
 }
 
 
-// Lee la temperatura del sensor DHT
+// Lee la temperatura del sensor DHT, retorna el valor leído
 float checkTemperature() {
     float temperature = dhtSensor->readTemperature();
     Serial.print(">Temperatura: ");
@@ -188,7 +187,7 @@ float checkTemperature() {
     return temperature;
 }
 
-// Lee la humedad del sensor DHT
+// Lee la humedad del sensor DHT, retorna el valor leído
 float checkHumidity() {
     // Lee la humedad del sensor DHT
     float humidity = dhtSensor->readHumidity();
