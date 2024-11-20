@@ -59,7 +59,7 @@
 #define MIN_TEMP_VALUE 15.0 // Temperatura mínima
 #define MAX_TEMP_VALUE 30.0 // Temperatura máxima
 #define MIN_HUM_VALUE 30.0 // Humedad mínima
-#define MAX_HUM_VALUE 80.0 // Humedad máxima
+#define MAX_HUM_VALUE 70.0 // Humedad máxima
 #define SOIL_MOISTURE_THERSHOLD_VALUE 20.0 // Umbral de humedad del suelo
 #define MIN_SOIL_MOISTURE_VALUE 20.0 // Humedad mínima del suelo
 #define MAX_SOIL_MOISTURE_VALUE 50.0 // Humedad máxima del suelo
