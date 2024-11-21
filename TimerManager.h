@@ -24,7 +24,7 @@ private:
 
   TimerEntry* findTimer(const String& name);
 
-  TimerEntry timers[10]; // Ajusta el tamaño según tus necesidades
+  TimerEntry timers[10]; // Ajustar el tamaño según  necesidades
   int timerCount;
 };
 
